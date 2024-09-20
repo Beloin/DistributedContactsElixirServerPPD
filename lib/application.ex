@@ -8,7 +8,7 @@ defmodule DistributedServer.Application do
   def start(_type, _args) do
     # List all child processes to be supervised
     children = [
-      {DistributedServer, 9000}
+      {DistributedServer, 9001}
       # Starts a worker by calling: TcpServer.Worker.start_link(arg)
       # {TcpServer.Worker, arg},
     ]

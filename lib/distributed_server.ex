@@ -9,7 +9,7 @@ defmodule DistributedServer do
   defstruct(
     active_conns: [],
     visitor: 0,
-    servers: []
+    conn_map: %{}
   )
 
   @type t :: %__MODULE__{active_conns: list(port), visitor: integer}
@@ -74,6 +74,10 @@ defmodule DistributedServer do
   defp do_recv(client_socket, length) do
     case :gen_tcp.recv(client_socket, length) do
       {:ok, data} ->
+        con_map = :sys.get_state(__MODULE__) |> Map.get(:conn_map)
+        constr = con_map[client_socket]
+        Logger.info("From #{inspect(constr)}")
+
         Logger.info("Recv:  #{inspect(client_socket)}")
         data_handler(client_socket, data)
 
@@ -110,7 +114,13 @@ defmodule DistributedServer do
     case :inet.peername(client_socket) do
       {:ok, {address, port}} ->
         addr_str = address |> Tuple.to_list() |> Enum.join(".")
-        Logger.info("Welcome: #{addr_str}:#{port}")
+        name = "#{addr_str}:#{port}"
+        Logger.info("Welcome #{name}")
+
+        con_map = :sys.get_state(__MODULE__) |> Map.get(:conn_map)
+        Logger.info("Conmap: #{inspect(con_map)}")
+        Map.put(con_map, client_socket, %ConnectionStruct{host: addr_str, port: port})
+        Logger.info("Conmap: #{inspect(con_map)}")
         spawn(fn -> IO.inspect({show_visitor_nummber(), address, port}) end)
 
       {:error, errno} ->
